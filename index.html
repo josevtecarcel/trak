@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trak Call Coach · Prueba técnica Product AI Engineer</title>
+<meta name="description" content="Análisis de llamadas de captación para recuperar el KPI. Diagnóstico, solución, medición y despliegue.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBFAF8;
+    --paper-2:#FFFFFF;
+    --ink:#16161A;
+    --ink-soft:#54565E;
+    --ink-faint:#8A8C93;
+    --line:#E4E1DB;
+    --line-soft:#EFEDE8;
+    --accent:#2B3A8F;
+    --accent-soft:#EEF0FA;
+    --amber:#9C6B15;
+    --amber-soft:#FBF3E4;
+    --green:#2C6B4F;
+    --red:#A33A3A;
+    --serif:'Instrument Serif',Georgia,serif;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,monospace;
+    --nav:280px;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:17px;
+    line-height:1.68;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ─────────── progress ─────────── */
+  #progress{
+    position:fixed;top:0;left:0;height:2px;width:0;
+    background:var(--accent);z-index:60;transition:width .1s linear
+  }
+
+  /* ─────────── sidebar ─────────── */
+  .nav{
+    position:fixed;top:0;left:0;width:var(--nav);height:100vh;
+    overflow-y:auto;padding:38px 26px 48px;
+    border-right:1px solid var(--line);background:var(--paper);
+    z-index:50;
+  }
+  .nav .brand{display:block;text-decoration:none;color:inherit;margin-bottom:30px}
+  .nav .brand .mark{
+    display:inline-flex;align-items:center;gap:9px;
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--accent);font-weight:500;margin-bottom:9px;
+  }
+  .nav .brand .mark i{
+    width:6px;height:6px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-soft);flex:none
+  }
+  .nav .brand .t{font-family:var(--serif);font-size:24px;line-height:1.12;letter-spacing:-.01em}
+  .nav .brand .s{font-size:12.5px;color:var(--ink-faint);margin-top:5px;line-height:1.4}
+
+  .nav .lbl{
+    font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;
+    color:var(--ink-faint);margin:0 0 11px 10px;
+  }
+  .nav ul{list-style:none;margin-bottom:26px}
+  .nav a.item{
+    display:flex;gap:11px;align-items:baseline;text-decoration:none;
+    color:var(--ink-soft);font-size:14.5px;line-height:1.35;
+    padding:7px 10px;border-radius:6px;border-left:2px solid transparent;
+    transition:color .15s,background .15s,border-color .15s;
+  }
+  .nav a.item .n{font-family:var(--mono);font-size:11px;color:var(--ink-faint);flex:none;padding-top:2px}
+  .nav a.item:hover{background:var(--line-soft);color:var(--ink)}
+  .nav a.item.on{background:var(--accent-soft);color:var(--accent);font-weight:500;border-left-color:var(--accent)}
+  .nav a.item.on .n{color:var(--accent)}
+
+  .nav .cta{
+    display:block;text-align:center;text-decoration:none;margin-top:8px;
+    background:var(--ink);color:#fff;font-size:13.5px;font-weight:500;
+    padding:11px 14px;border-radius:7px;transition:background .15s;
+  }
+  .nav .cta:hover{background:var(--accent)}
+
+  /* ─────────── mobile bar ─────────── */
+  .bar{
+    display:none;position:fixed;top:0;left:0;right:0;z-index:55;
+    background:rgba(251,250,248,.94);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+    padding:11px 18px;align-items:center;justify-content:space-between;gap:12px;
+  }
+  .bar .bt{font-family:var(--serif);font-size:18px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar button{
+    background:none;border:1px solid var(--line);border-radius:7px;
+    padding:7px 12px;font-family:var(--sans);font-size:13px;font-weight:500;
+    color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:7px;flex:none;
+  }
+  .bar button .ic{display:flex;flex-direction:column;gap:3px}
+  .bar button .ic span{display:block;width:14px;height:1.5px;background:var(--ink);border-radius:2px}
+  .scrim{display:none;position:fixed;inset:0;background:rgba(22,22,26,.32);z-index:49}
+
+  /* ─────────── main ─────────── */
+  main{margin-left:var(--nav);padding:0 64px}
+  .wrap{max-width:730px;margin:0 auto}
+
+  /* cover */
+  .cover{padding:96px 0 64px}
+  .cover .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:26px;
+  }
+  .cover h1{
+    font-family:var(--serif);font-weight:400;
+    font-size:clamp(40px,7vw,64px);line-height:1.04;letter-spacing:-.02em;margin-bottom:22px;
+  }
+  .cover h1 em{font-style:italic;color:var(--accent)}
+  .cover .dek{font-size:20px;line-height:1.55;color:var(--ink-soft);max-width:56ch}
+  .cover .meta{
+    display:flex;flex-wrap:wrap;gap:10px 32px;margin-top:38px;padding-top:24px;
+    border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:12px;color:var(--ink-faint);
+  }
+  .cover .meta b{color:var(--ink);font-weight:500}
+
+
+  /* sections */
+  section.doc{padding:74px 0;border-top:1px solid var(--line)}
+  .kicker{
+    font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink-faint);display:flex;align-items:center;gap:12px;margin-bottom:20px;
+  }
+  .kicker .n{color:var(--accent)}
+  .kicker .rule{flex:1;height:1px;background:var(--line);max-width:48px}
+
+  h2{
+    font-family:var(--serif);font-weight:400;
+    font-size:clamp(31px,4.6vw,44px);line-height:1.08;letter-spacing:-.015em;
+    margin-bottom:26px;
+  }
+  h3{
+    font-size:19px;font-weight:600;letter-spacing:-.01em;
+    margin:44px 0 14px;padding-top:4px;
+  }
+  h4{font-size:15.5px;font-weight:600;margin:28px 0 10px}
+
+  p{margin-bottom:17px;color:var(--ink-soft)}
+  p.lead{font-size:19px;line-height:1.58;color:var(--ink);margin-bottom:24px}
+  strong{color:var(--ink);font-weight:600}
+  em{font-style:italic}
+  a.inline{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(43,58,143,.28)}
+  a.inline:hover{border-bottom-color:var(--accent)}
+
+  ul.li,ol.li{list-style:none;margin:0 0 20px}
+  ul.li li{position:relative;padding-left:20px;margin-bottom:10px;color:var(--ink-soft)}
+  ul.li li::before{
+    content:"";position:absolute;left:2px;top:11px;
+    width:5px;height:5px;border-radius:50%;background:var(--accent);opacity:.42
+  }
+  ol.li{counter-reset:o}
+  ol.li li{position:relative;padding-left:28px;margin-bottom:11px;color:var(--ink-soft)}
+  ol.li li::before{
+    counter-increment:o;content:counter(o) ".";position:absolute;left:0;top:0;
+    font-family:var(--mono);font-size:12.5px;color:var(--accent);font-weight:500
+  }
+  li b,li strong{color:var(--ink);font-weight:600}
+
+  /* callouts */
+  .note{
+    background:var(--paper-2);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 9px 9px 0;padding:19px 24px;margin:24px 0;
+    font-size:16px;color:var(--ink-soft);
+  }
+  .note p:last-child{margin-bottom:0}
+  .note.warn{border-left-color:var(--amber);background:var(--amber-soft);border-color:#EDE0C6}
+  .note.key{border-left-color:var(--ink);background:var(--ink);color:#D8D9DE}
+  .note.key strong,.note.key b{color:#fff}
+
+  /* code / diagram */
+  pre{
+    background:var(--paper-2);border:1px solid var(--line);border-radius:9px;
+    padding:20px 22px;margin:22px 0;overflow-x:auto;
+    font-family:var(--mono);font-size:12.5px;line-height:1.75;color:var(--ink-soft);
+    -webkit-overflow-scrolling:touch;
+  }
+  code{font-family:var(--mono);font-size:.88em;background:var(--line-soft);
+    padding:2px 6px;border-radius:4px;color:var(--ink)}
+  pre code{background:none;padding:0;font-size:inherit}
+
+  /* tables */
+  .tw{overflow-x:auto;margin:24px 0;border:1px solid var(--line);border-radius:10px;background:var(--paper-2);-webkit-overflow-scrolling:touch}
+  table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:520px}
+  thead th{
+    text-align:left;padding:13px 17px;background:#F6F4F0;
+    border-bottom:1px solid var(--line);
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--ink-faint);font-weight:500;white-space:nowrap;
+  }
+  tbody td{padding:14px 17px;border-bottom:1px solid var(--line-soft);vertical-align:top;color:var(--ink-soft);line-height:1.52}
+  tbody tr:last-child td{border-bottom:none}
+  tbody td:first-child{color:var(--ink)}
+  table.matrix td:first-child,table.matrix th:first-child{background:#F6F4F0;font-weight:600;color:var(--ink)}
+  .tag{font-family:var(--mono);font-size:11px;font-weight:500;padding:2px 7px;border-radius:4px;white-space:nowrap}
+  .tag.h1{background:var(--amber-soft);color:var(--amber)}
+  .tag.h3{background:#F6E7E7;color:var(--red)}
+  .tag.ok{background:#E6F0EA;color:var(--green)}
+
+  /* details */
+  details{border:1px solid var(--line);border-radius:9px;background:var(--paper-2);margin-bottom:12px;overflow:hidden}
+  details summary{
+    padding:15px 20px;cursor:pointer;font-weight:500;font-size:15.5px;color:var(--ink);
+    list-style:none;display:flex;align-items:center;gap:11px;
+  }
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{
+    content:"+";font-family:var(--mono);color:var(--accent);font-size:15px;flex:none
+  }
+  details[open] summary::before{content:"–"}
+  details summary:hover{background:var(--line-soft)}
+  details .body{padding:4px 22px 22px;border-top:1px solid var(--line-soft)}
+  details .body p:first-child{margin-top:16px}
+
+  .turn{margin-bottom:14px;font-size:15px;line-height:1.6;color:var(--ink-soft)}
+  .turn .who{color:var(--ink);font-weight:600}
+  .turn .mood{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint)}
+
+  /* tool cta */
+  .toolcard{
+    background:var(--ink);color:#E9EAEE;border-radius:14px;padding:34px 36px;margin:8px 0 30px;
+  }
+  .toolcard .h{font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:#8E93A8;margin-bottom:14px}
+  .toolcard .t{font-family:var(--serif);font-size:29px;line-height:1.15;color:#fff;margin-bottom:10px}
+  .toolcard p{color:#B9BCC7;font-size:15.5px;margin-bottom:22px}
+  .toolcard a{
+    display:inline-block;background:#fff;color:var(--ink);text-decoration:none;
+    font-weight:600;font-size:15px;padding:12px 22px;border-radius:8px;transition:transform .15s;
+  }
+  .toolcard a:hover{transform:translateY(-1px)}
+  .toolcard .warn{font-size:13px;color:#8E93A8;margin:16px 0 0}
+
+  footer{margin-left:var(--nav);padding:52px 64px 80px;border-top:1px solid var(--line)}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;
+    font-family:var(--mono);font-size:12px;color:var(--ink-faint)}
+  footer b{color:var(--ink);font-weight:500}
+
+  /* ─────────── responsive ─────────── */
+  @media(max-width:1080px){
+    main,footer{padding-left:44px;padding-right:44px}
+  }
+  @media(max-width:900px){
+    body{font-size:16.5px}
+    .bar{display:flex}
+    .nav{
+      transform:translateX(-100%);transition:transform .24s ease;
+      width:min(320px,86vw);box-shadow:0 0 40px rgba(0,0,0,.1)
+    }
+    .nav.open{transform:translateX(0)}
+    .scrim.on{display:block}
+    main{margin-left:0;padding:52px 22px 0}
+    footer{margin-left:0;padding:44px 22px 64px}
+    .cover{padding:52px 0 44px}
+    section.doc{padding:56px 0}
+    .toolcard{padding:26px 24px}
+    .toolcard .t{font-size:24px}
+    h3{margin-top:36px}
+  }
+  @media(max-width:560px){
+    .cover .meta{gap:8px 20px;font-size:11px}
+    .note{padding:16px 18px}
+    pre{font-size:11.5px;padding:16px}
+  }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<div class="bar">
+  <span class="bt">Trak Call Coach</span>
+  <button id="menu" aria-label="Abrir índice"><span class="ic"><span></span><span></span><span></span></span> Índice</button>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<aside class="nav" id="nav">
+  <a class="brand" href="#top">
+    <span class="mark"><i></i> Prueba técnica</span>
+    <span class="t">Trak Call Coach</span>
+    <span class="s">Product AI Engineer · TRAK</span>
+  </a>
+
+  <div class="lbl">Documento</div>
+  <ul>
+    <li><a class="item" href="#s1"><span class="n">01</span> Diagnóstico e hipótesis</a></li>
+    <li><a class="item" href="#s2"><span class="n">02</span> Solución</a></li>
+    <li><a class="item" href="#s3"><span class="n">03</span> Medición y despliegue</a></li>
+    <li><a class="item" href="#s4"><span class="n">04</span> Coste operativo</a></li>
+    <li><a class="item" href="#s5"><span class="n">05</span> La herramienta</a></li>
+  </ul>
+
+  <div class="lbl">Anexos</div>
+  <ul>
+    <li><a class="item" href="#sa"><span class="n">A</span> Especificación técnica</a></li>
+    <li><a class="item" href="#sb"><span class="n">B</span> Playbook y transcripciones</a></li>
+  </ul>
+
+  <a class="cta" href="https://trak-front.onrender.com" target="_blank" rel="noopener">Abrir la herramienta →</a>
+</aside>
+
+<main id="top">
+  <div class="wrap">
+
+    <!-- ════════ COVER ════════ -->
+    <header class="cover">
+      <div class="eyebrow">Prueba técnica · Product AI Engineer</div>
+      <h1>Recuperar la captación <em>midiendo</em> lo que pasa en las llamadas.</h1>
+      <p class="dek">La captación ha caído de 75% a menos de 60% en tres meses. Este documento diagnostica por qué, propone un instrumento para separar las dos causas posibles, y plantea cómo medir si funciona.</p>
+      <div class="meta">
+        <span>AUTOR &nbsp;<b>Jose Vicente Carcel</b></span>
+        <span>EMPRESA &nbsp;<b>TRAK</b></span>
+        <span>ENTREGA &nbsp;<b>Julio 2026</b></span>
+      </div>
+    </header>
+
+    <!-- ════════ 1 ════════ -->
+    <section class="doc" id="s1">
+      <div class="kicker"><span class="n">01</span><span class="rule"></span><span>Diagnóstico</span></div>
+      <h2>Diagnóstico e hipótesis</h2>
+
+      <h3>Lo que sabemos</h3>
+      <ul class="li">
+        <li>Captación: <strong>75% → por debajo del 60%</strong> en 3 meses (≈5 puntos/mes).</li>
+        <li>Objetivo: <strong>recuperar 15 puntos</strong>, volver al 75%.</li>
+        <li>Volumen: <strong>1.000–2.000 leads/mes</strong> derivados para captar. 15 puntos sobre ~1.500 leads ≈ <strong>225 captaciones perdidas cada mes</strong>.</li>
+        <li>Equipo: de 1 captador a 3. Existe playbook; no hay certeza de que se ejecute igual.</li>
+        <li><strong>Hay llamadas grabadas y transcritas desde enero de 2026.</strong></li>
+      </ul>
+
+      <h3>Objetivo</h3>
+      <p><strong>Recuperar 15 puntos de captación —volver al 75%— sin degradar activación ni retención.</strong> Subir captación empujando leads poco cualificados no es una mejora: mueve el problema aguas abajo.</p>
+      <p>Dos supuestos que asumo y que, de ser distintos, cambian la variable de segmentación pero no el método: los leads llegan <strong>derivados por aseguradoras partner</strong> (modelo B2B2C), y la <strong>transcripción de las llamadas ya está resuelta</strong>.</p>
+
+      <h3>Captación no es un número: es una cadena</h3>
+<pre>leads recibidos → contactados → contacto efectivo → conversación → CAPTADO</pre>
+      <p>Una caída de 5 puntos al mes puede venir de sitios opuestos: menos leads o de peor calidad (problema de fuente), menos contacto efectivo (capacidad), o peor conversión en la conversación (ejecución o guion). <strong>Solo en el último caso aporta algo analizar llamadas.</strong> Sin descomponer, construir IA sobre las llamadas es disparar a ciegas.</p>
+      <p>Tres cortes localizan la caída: <strong>× captador</strong> (¿se concentra en los 2 nuevos?), <strong>× aseguradora</strong> (¿ha cambiado el mix o ha caído un partner?) y <strong>× tiempo</strong> (¿tendencia o estacionalidad?).</p>
+
+      <h3>Hipótesis</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th></th><th>Hipótesis</th><th>Predice</th><th>Si es cierta</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="tag h1">H1</span></td>
+              <td><strong>Dilución de ejecución.</strong> Los 2 nuevos no ejecutan el playbook como la persona original.</td>
+              <td>Caída concentrada en los nuevos.</td>
+              <td>Coaching y visibilidad, no guion nuevo.</td>
+            </tr>
+            <tr>
+              <td><span class="tag">H2</span></td>
+              <td><strong>Cambio de mix de aseguradoras.</strong> El volumen extra vino de nuevos partners con otro perfil.</td>
+              <td>Conversión estable <em>dentro</em> de cada partner, peor agregado.</td>
+              <td>No lo arregla ninguna herramienta sobre llamadas. Se ataca en el acuerdo con el partner.</td>
+            </tr>
+            <tr>
+              <td><span class="tag">H2b</span></td>
+              <td><strong>Degradación de un canal.</strong> Un partner cambia cómo presenta TRAK o relaja su criterio de derivación.</td>
+              <td>Un partner cae, el resto se mantiene.</td>
+              <td>Es problema de canal, no de equipo.</td>
+            </tr>
+            <tr>
+              <td><span class="tag h3">H3</span></td>
+              <td><strong>Playbook desfasado o no segmentado.</strong> Un guion único para perfiles distintos.</td>
+              <td>Fidelidad alta <strong>y aun así</strong> baja conversión.</td>
+              <td>Formar más en el guion actual es contraproducente.</td>
+            </tr>
+            <tr>
+              <td><span class="tag">H4</span></td>
+              <td><strong>Capacidad y latencia.</strong> Más volumen, misma operativa: se tarda más en llamar.</td>
+              <td>Caída en contacto efectivo, no en conversación.</td>
+              <td>Es proceso. Barato de arreglar.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>La coincidencia temporal con el paso de 1 a 3 captadores señala a H1, pero coincidencia no es causa. Lo más probable es <strong>combinación de H1 y H2</strong>.</p>
+
+      <h3>La medición que discrimina</h3>
+      <p>H1 y H3 exigen soluciones <strong>opuestas</strong> —coaching vs. rediseñar el guion—, así que confundirlas es caro. Se separan cruzando dos variables por llamada: <strong>fidelidad al playbook</strong> (0–100) y <strong>resultado</strong> (captado sí/no).</p>
+      <div class="tw">
+        <table class="matrix">
+          <thead><tr><th></th><th>Conversión alta</th><th>Conversión baja</th></tr></thead>
+          <tbody>
+            <tr><td>Fidelidad alta</td><td>Playbook válido</td><td><strong>→ H3: playbook desfasado</strong></td></tr>
+            <tr><td>Fidelidad baja</td><td>¿Qué hacen distinto?</td><td><strong>→ H1: problema de ejecución</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Un nivel más: <strong>qué dimensiones concretas correlacionan con cerrar</strong>. Dice dónde concentrar el coaching y qué partes del guion son ceremonia. Y desagregado por aseguradora, si el playbook debe segmentarse por canal.</p>
+      <div class="note"><p>Correlación, no causalidad. Se trata como hipótesis a validar en el experimento (sección 3), no como conclusión.</p></div>
+
+      <h3>Captación no es el objetivo final</h3>
+      <p>El funnel Q2 sitúa el <em>Death Valley</em> en <strong>Activación (70%) → Retención (40%)</strong>, no en captación. Empujar leads poco cualificados sube captación y los pierde aguas abajo: el sistema no mejora, solo mueve el problema y consume tiempo clínico.</p>
+      <div class="note key"><p>Criterio de éxito: <strong>sube captación <em>y</em> se mantienen Captación→Activación→Retención.</strong> Si sube la primera y baja la segunda, se revierte.</p></div>
+
+      <h3>Conclusión operativa</h3>
+      <ol class="li">
+        <li>Primero, una tabla de conversión <strong>por eslabón × captador × aseguradora</strong> desde enero. Confirma o descarta H2, H2b y H4 en horas.</li>
+        <li>Con el histórico transcrito, el scorer puede correr <strong>retrospectivamente</strong> sobre 6 meses: cuándo empezó a caer la fidelidad, en quién y con qué partner. El diagnóstico deja de ser hipótesis antes de tocar la operación.</li>
+        <li>La herramienta de la sección 2 está diseñada para <strong>discriminar H1 de H3</strong>, no solo para corregir. Ese es su valor principal.</li>
+      </ol>
+    </section>
+
+    <!-- ════════ 2 ════════ -->
+    <section class="doc" id="s2">
+      <div class="kicker"><span class="n">02</span><span class="rule"></span><span>Solución</span></div>
+      <h2>Solución</h2>
+
+      <h3>Qué construyo y por qué</h3>
+      <p>Hay dos preguntas que hoy nadie puede responder con datos:</p>
+      <ol class="li">
+        <li><strong>¿Se está ejecutando el playbook?</strong> (H1)</li>
+        <li><strong>¿Sirve el playbook que hay?</strong> (H3)</li>
+      </ol>
+      <p>Las soluciones son <strong>opuestas</strong> —coaching vs. rediseñar el guion—, así que confundirlas cuesta meses. Construyo el instrumento que las separa.</p>
+      <div class="note"><p><strong>Fidelidad al playbook</strong>: grado de seguimiento del guion en una llamada (0–100). No uso "adherencia": en TRAK esa palabra ya designa al paciente.</p></div>
+      <p class="lead">No es un evaluador de personas. Es un instrumento de diagnóstico que, de paso, entrena.</p>
+
+      <h3>Cómo funciona</h3>
+<pre>transcripción ──▶ scorer LLM ──▶ ┌── feedback al captador ──▶ mejora la ejecución
+                                 └── todas las llamadas, puntuadas y con su
+                                     coaching, agregadas para el responsable
+                                              │
+                                              ├──▶ rediseña el playbook
+                                              └──▶ se vuelve a medir</pre>
+      <p>Un LLM recibe el playbook y la transcripción, y devuelve una evaluación <strong>estructurada</strong> de 7 dimensiones. Por cada una: puntuación, <strong>cita textual</strong> que la justifica, qué faltó y qué decir la próxima vez.</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Dimensión</th><th>Verifica</th></tr></thead>
+          <tbody>
+            <tr><td>Apertura y contexto de derivación</td><td>¿Conecta con que su aseguradora le ha derivado?</td></tr>
+            <tr><td>Escucha y diagnóstico</td><td>¿Pregunta por la lesión y su impacto?</td></tr>
+            <tr><td>Propuesta de valor</td><td>¿Explica TRAK aplicado a su caso?</td></tr>
+            <tr><td>Manejo de objeciones</td><td>¿Detecta la objeción y la trabaja?</td></tr>
+            <tr><td>Próximos pasos</td><td>¿Deja claro qué pasa después?</td></tr>
+            <tr><td>Cierre y compromiso</td><td>¿Pide compromiso y agenda fecha?</td></tr>
+            <tr><td>Tono y empatía</td><td>¿Registro adecuado a alguien lesionado?</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>La cita textual es obligatoria</strong> por tres razones: hace el scoring auditable, hace que el captador se crea el feedback porque ve su propia frase, y ancla el juicio al texto real —si no hay cita, no hay puntuación válida.</p>
+
+      <h3>Las dos vistas</h3>
+      <p><strong>Captador — "cómo mejoro".</strong> Sus llamadas, su evolución contra sí mismo, y el feedback con su cita y la alternativa al lado. Nunca ve las de otros. Sin rankings.</p>
+      <p><strong>Responsable — "qué está pasando".</strong> Monitoriza <strong>todas</strong> las llamadas con su puntuación y su coaching, y sobre ese conjunto responde a la sección 1:</p>
+      <ul class="li">
+        <li>Fidelidad por captador → ¿se concentra en los nuevos? (H1)</li>
+        <li><strong>Matriz fidelidad × conversión</strong> → el discriminador H1 / H3</li>
+        <li>Qué dimensiones correlacionan con cerrar → dónde va el coaching, qué sobra del guion</li>
+        <li>Todo desagregable por aseguradora → si el playbook debe segmentarse por canal</li>
+      </ul>
+    </section>
+
+    <!-- ════════ 3 ════════ -->
+    <section class="doc" id="s3">
+      <div class="kicker"><span class="n">03</span><span class="rule"></span><span>Medición</span></div>
+      <h2>Medición y despliegue</h2>
+      <p class="lead">Dos pasos: primero mirar hacia atrás, después medir hacia adelante.</p>
+
+      <h3>Paso 1 · Analizar los 6 meses de histórico</h3>
+      <p>Hay llamadas transcritas desde enero. El scorer se pasa sobre todas ellas, sin tocar la operación ni al equipo. En cuestión de horas, la vista del responsable deja de estar vacía y contiene el diagnóstico completo.</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Pregunta</th><th>Qué la responde</th></tr></thead>
+          <tbody>
+            <tr><td>¿Cuándo empezó a caer la fidelidad al playbook?</td><td>Serie temporal desde enero</td></tr>
+            <tr><td>¿Se concentra en los dos nuevos?</td><td>Fidelidad × captador × mes → <span class="tag h1">H1</span></td></tr>
+            <tr><td>¿Hay llamadas fieles al guion que aun así no convierten?</td><td>Matriz fidelidad × conversión → <span class="tag h3">H3</span></td></tr>
+            <tr><td>¿Ha cambiado el mix de aseguradoras?</td><td>Conversión por partner en el tiempo</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Y da la <strong>baseline de enero</strong>, cuando la captación estaba al 75%: no hay que suponer cómo era una llamada buena, se puede mirar.</p>
+      <div class="note"><p>El enunciado apunta a las dos hipótesis centrales —o no se sigue el playbook, o el playbook está desfasado—. Este paso dice <strong>cuál de las dos</strong>, que es lo que decide si el trabajo es coaching o rediseño del guion.</p></div>
+      <p>El paso 2 se hace en cualquier caso. Lo que cambia es <strong>qué se está midiendo</strong>: si el diagnóstico es H1, se mide el efecto del coaching sobre la ejecución; si es H3, primero se reescribe el playbook y lo que se mide es el efecto del guion nuevo.</p>
+
+      <h3>Paso 2 · Los 3 captadores usando el scorer</h3>
+      <p>Con tres personas no se puede aleatorizar, así que entran <strong>escalonadamente</strong>.</p>
+      <p><strong>Todas las llamadas se analizan desde el principio</strong>, también las del control —sin eso no habría con qué comparar. Lo que cambia es quién <strong>recibe</strong> su feedback:</p>
+      <ul class="li">
+        <li><strong>Control</strong> — no tiene acceso a la herramienta. El proceso en lote analiza sus llamadas igual, así que hay datos de su fidelidad y su conversión, pero él no los ve. Trabaja como siempre.</li>
+        <li><strong>Con feedback</strong> — accede a la herramienta y recibe el análisis de sus llamadas.</li>
+      </ul>
+      <p>La intervención que se mide no es el scoring: es el coaching. El responsable, en cambio, mantiene durante todo el experimento la foto completa —todas las llamadas de los tres captadores, puntuadas—, que es lo que permite comparar y decidir.</p>
+<pre>           Sem 1-2   Sem 3-4        Sem 5-6        Sem 7-8
+Agente 1   control   CON FEEDBACK   CON FEEDBACK   CON FEEDBACK
+Agente 2   control   control        CON FEEDBACK   CON FEEDBACK
+Agente 3   control   control        control        CON FEEDBACK</pre>
+      <p>Sin control no se puede atribuir nada: si la captación sube en la semana 3, podría ser por el feedback o porque esa semana llegaron mejores leads. Si mejora quien lo recibe y no quien no lo recibe, la diferencia sí es atribuible. Si mejoran todos a la vez, fue algo externo.</p>
+      <p>Da dos comparaciones a la vez: <strong>cada captador contra sí mismo</strong> y <strong>quien recibe feedback contra quien todavía no lo recibe en la misma semana</strong> —esto último es lo que absorbe estacionalidad y cambios de mercado.</p>
+      <p>Empieza por el veterano: si el feedback es malo o molesta, lo detecta quien mejor puede juzgarlo, antes de exponer a los nuevos.</p>
+
+      <h4>Qué se mide</h4>
+      <div class="tw">
+        <table>
+          <thead><tr><th></th><th>Métrica</th><th>Criterio</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Objetivo</strong></td><td>Tasa de captación</td><td>Recuperar 15 puntos, de &lt;60% a 75%</td></tr>
+            <tr><td><strong>Señal temprana</strong></td><td>Fidelidad al playbook</td><td>Se mueve antes que la conversión</td></tr>
+            <tr><td><strong>No debe empeorar</strong></td><td>Activación y retención</td><td></td></tr>
+            <tr><td><strong>No debe empeorar</strong></td><td>Llamadas/día por captador</td><td>Si el sistema añade fricción, no sirve</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Control de sesgo imprescindible</h4>
+      <p><strong>Asignación aleatoria de leads entre captadores</strong> durante el experimento. Sin esto, no se sabe si un captador convierte más porque ejecuta mejor o porque le llegan mejores leads, y ninguna otra medición vale.</p>
+      <p>Además, todas las lecturas desagregadas por aseguradora: un cambio de mix se ve, no se confunde con desempeño.</p>
+
+      <h4>Cuánto hay que esperar</h4>
+      <p>Con ~1.500 leads/mes y 3 captadores, cada uno maneja unas 500 llamadas al mes.</p>
+      <ul class="li">
+        <li><strong>Recuperación completa (60% → 75%)</strong>: se detecta con ~170 llamadas por grupo, unas <strong>2 semanas</strong>.</li>
+        <li><strong>Mejora parcial (60% → 65%)</strong>: necesita ~1.400 por grupo, unos <strong>3 meses</strong>.</li>
+      </ul>
+      <p>Si a las 4 semanas no hay señal clara, el efecto es pequeño. La pregunta entonces no es "esperamos más", sino si el problema estaba realmente en la ejecución.</p>
+
+      <h4>Decisión a las 4 semanas</h4>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Resultado</th><th>Decisión</th></tr></thead>
+          <tbody>
+            <tr><td>Sube captación y no empeora nada más</td><td>Desplegar a todo el equipo</td></tr>
+            <tr><td>Sube fidelidad, no sube captación</td><td>Es H3: rediseñar el playbook</td></tr>
+            <tr><td>No sube ni la fidelidad</td><td>El feedback no cala: revisar el formato antes que el sistema</td></tr>
+            <tr><td>Sube captación y baja activación o retención</td><td><strong>Revertir</strong>: se están empujando leads no cualificados</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Cómo se presenta al equipo</h3>
+      <p>Es el mayor riesgo del proyecto y no es técnico. Un sistema que puntúa llamadas puede leerse como vigilancia; si eso pasa, el equipo actúa para la métrica y los datos dejan de servir para diagnosticar.</p>
+      <ul class="li">
+        <li>El feedback llega <strong>antes al captador que al responsable</strong>.</li>
+        <li><strong>Sin rankings</strong>: cada persona se compara consigo misma.</li>
+        <li>Ninguna decisión sobre personas se toma automáticamente.</li>
+        <li>Se presenta <strong>con</strong> el equipo, no <strong>al</strong> equipo: el captador veterano ayuda a definir qué es una llamada buena. Es quien mejor lo sabe.</li>
+      </ul>
+    </section>
+
+    <!-- ════════ 4 ════════ -->
+    <section class="doc" id="s4">
+      <div class="kicker"><span class="n">04</span><span class="rule"></span><span>Coste</span></div>
+      <h2>Coste operativo</h2>
+      <p class="lead">Tres capas de coste, y solo una es técnica.</p>
+
+      <h3>Cómputo</h3>
+      <p>Cada análisis registra en base de datos su modelo, versión de prompt, tokens de entrada y salida, coste y latencia. El coste no es una estimación: se mide llamada a llamada y es agregable por captador, por aseguradora o por versión de prompt.</p>
+      <p>Medido con <code>gpt-4o-mini</code>, temperatura 0 y salida estructurada:</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th></th><th>Tokens</th><th>Coste</th></tr></thead>
+          <tbody>
+            <tr><td>Entrada (playbook + dimensiones + transcripción)</td><td>1.779</td><td>0,000267 $</td></tr>
+            <tr><td>Salida (7 dimensiones, resumen y coaching)</td><td>541</td><td>0,000325 $</td></tr>
+            <tr><td><strong>Por llamada analizada</strong></td><td></td><td><strong>0,00059 $</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Proyectado al volumen real:</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th></th><th>Llamadas</th><th>Coste</th></tr></thead>
+          <tbody>
+            <tr><td>Un mes de operación</td><td>~1.500</td><td><strong>0,89 $</strong></td></tr>
+            <tr><td>Los 6 meses de histórico</td><td>~9.000</td><td><strong>5,31 $</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Y queda margen sin tocar la calidad: el playbook viaja idéntico en cada petición y ocupa la mayor parte de la entrada —candidato a <em>prompt caching</em>—, y como el análisis es asíncrono puede procesarse en <em>batch</em>.</p>
+      <div class="note key"><p>Analizar el 100% de las llamadas cuesta menos que una hora de trabajo de un captador al año. El coste de cómputo no es un factor de decisión.</p></div>
+      <p>Que las métricas estén persistidas tiene una segunda utilidad: al cambiar de modelo o de versión de prompt, el coste y la latencia son comparables entre versiones con el mismo detalle que la calidad. Escalar a un modelo mayor deja de ser una intuición y pasa a ser una comparación con datos de las dos cosas.</p>
+
+      <h3>Operación</h3>
+      <p><strong>Durante la llamada: cero fricción.</strong> El análisis es posterior y automático. El captador no cambia nada de cómo trabaja.</p>
+      <p><strong>Después:</strong> revisar el feedback de sus llamadas, minutos al día. Es tiempo que antes no existía —hasta ahora nadie revisaba nada— así que es coste añadido, no sustituido.</p>
+      <p><strong>Para el responsable:</strong> sí sustituye. Escuchar llamadas al azar deja de ser la forma de saber qué pasa, y pasa a ser un panel con todas analizadas.</p>
+
+      <h3>Implantación</h3>
+      <p>Es el coste real del proyecto, y no es técnico: <strong>cómo se presenta al equipo determina si funciona</strong>. Un sistema que puntúa llamadas puede leerse como vigilancia, y si eso ocurre el equipo actúa para la métrica y los datos dejan de servir para diagnosticar.</p>
+      <p>Las reglas para evitarlo están en la sección 3.</p>
+    </section>
+
+    <!-- ════════ 5 ════════ -->
+    <section class="doc" id="s5">
+      <div class="kicker"><span class="n">05</span><span class="rule"></span><span>Demo</span></div>
+      <h2>La herramienta</h2>
+
+      <div class="toolcard">
+        <div class="h">MVP desplegado</div>
+        <div class="t">Trak Call Coach</div>
+        <p>Al entrar se elige perfil: administrador o agente de captación. No hay credenciales, es un MVP.</p>
+        <a href="https://trak-front.onrender.com" target="_blank" rel="noopener">Abrir la herramienta →</a>
+        <p class="warn">La primera carga puede tardar unos segundos: el servicio se suspende por inactividad y necesita arrancar.</p>
+      </div>
+
+      <h3>Qué mirar, en este orden</h3>
+
+      <h4>1 · Panel de captación</h4>
+      <p>La vista del responsable. Los KPIs arriba, y debajo la pieza central: la <strong>matriz fidelidad × conversión</strong>. Cada punto es una llamada. Los cuatro cuadrantes son el diagnóstico: arriba a la izquierda, guion cumplido que no convierte (playbook desfasado); abajo a la derecha, guion incumplido (problema de ejecución).</p>
+      <p>Más abajo, fidelidad por captador, por dimensión, qué dimensiones separan las llamadas captadas de las perdidas, y el desglose por aseguradora.</p>
+
+      <h4>2 · Una llamada en detalle</h4>
+      <p>Clic en cualquier fila de la tabla. Las 7 dimensiones con su puntuación, la <strong>cita textual</strong> que la justifica, qué faltó y qué decir la próxima vez.</p>
+
+      <h4>3 · Analizar llamada</h4>
+      <p>Pruébalo. Hay un botón de transcripción de ejemplo para no escribir nada. Tarda unos segundos: está llamando al modelo de verdad. La llamada queda guardada y aparece en el panel.</p>
+
+      <h4>4 · Validación del scorer</h4>
+      <p>Cómo está construido y la prueba de que funciona. El prompt, el esquema de salida, las decisiones de diseño, y el informe de acuerdo con la anotación manual.</p>
+
+      <h4>5 · Playbook</h4>
+      <p>El guion evaluado, las dimensiones con sus pesos, y un avance de la siguiente iteración: recomendaciones de cambio al propio playbook.</p>
+
+      <h4>6 · Vista de agente</h4>
+      <p>Cambia de perfil desde el menú. Es el otro lado: solo sus llamadas, sin comparativas con nadie, y el feedback ordenado de peor a mejor para que lo accionable esté arriba.</p>
+
+      <h3>Qué son los datos</h3>
+      <div class="note warn"><p>Transcripciones <strong>sintéticas</strong>, escritas para cubrir los cuatro cuadrantes de la matriz: ejecución alta que convierte, ejecución alta que no, ejecución baja que no convierte, y ejecución baja que sí. Suficiente para comprobar que el instrumento detecta lo que debe detectar; no para sacar conclusiones.</p></div>
+    </section>
+
+    <!-- ════════ ANEXO A ════════ -->
+    <section class="doc" id="sa">
+      <div class="kicker"><span class="n">Anexo A</span><span class="rule"></span><span>Técnica</span></div>
+      <h2>Especificación técnica</h2>
+
+      <h3>Arquitectura</h3>
+<pre>Vue 3 SPA  ──REST──▶  Django + DRF  ──▶  scorer  ──▶  OpenAI API
+  (Render)               (Render)          │        (structured output)
+                            │              │
+                            ▼              ▼
+                        PostgreSQL     validación
+                                       golden set</pre>
+      <p>Tres piezas: una SPA que consume una API REST, un backend que orquesta el scoring y persiste, y una capa de evaluación que valida al propio scorer antes de que sus salidas sostengan ninguna decisión.</p>
+      <p>El análisis es <strong>asíncrono por diseño</strong>: no hay usuario esperando durante una llamada. Se ejecuta en lote sobre las transcripciones ya disponibles.</p>
+
+      <h3>Stack</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Capa</th><th>Tecnología</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Backend</strong></td><td>Django 5 + DRF</td><td>ORM maduro, admin gratis para inspeccionar datos, y el equipo de TRAK ya trabaja en Python.</td></tr>
+            <tr><td><strong>Modelo de IA</strong></td><td>OpenAI <code>gpt-4o-mini</code></td><td>Ver "elección de modelo".</td></tr>
+            <tr><td><strong>Contrato de salida</strong></td><td>Pydantic v2</td><td>El JSON Schema se le exige al modelo y valida la respuesta en el mismo paso.</td></tr>
+            <tr><td><strong>Frontend</strong></td><td>Vue 3 + Vite + Tailwind + Pinia</td><td>SPA ligera, suficiente para un panel analítico.</td></tr>
+            <tr><td><strong>Gráficos</strong></td><td>Chart.js</td><td>Sin dependencias pesadas para cuatro visualizaciones.</td></tr>
+            <tr><td><strong>Base de datos</strong></td><td>PostgreSQL</td><td></td></tr>
+            <tr><td><strong>Infraestructura</strong></td><td>Render</td><td>Despliegue desde Git, suficiente para un MVP.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Modelo de datos</h3>
+<pre>Call ──1:N──▶ Scoring ──1:7──▶ DimensionScore</pre>
+      <p><strong>Call</strong> — transcripción, captador, aseguradora, fecha, duración y <code>converted</code> (¿se captó?). Este último campo es el que permite cruzar fidelidad con conversión: sin él el sistema mide, pero no diagnostica.</p>
+      <p><strong>Scoring</strong> — fidelidad total, resumen, acciones de coaching, y la trazabilidad de cada ejecución: modelo, versión de prompt, tokens, coste y latencia. Una llamada puede tener varios scorings; solo uno vigente. Así se puede re-puntuar al cambiar prompt o modelo y <strong>comparar versiones</strong> sin perder el histórico.</p>
+      <p><strong>DimensionScore</strong> — por cada una de las 7 dimensiones: puntuación, cita textual, qué faltó y qué decir la próxima vez.</p>
+
+      <h3>El scorer</h3>
+      <p>Una llamada al modelo con <strong>salida estructurada</strong> contra el schema de Pydantic. Cuatro decisiones de diseño:</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Decisión</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Temperatura 0</strong></td><td>Evaluar exige consistencia, no creatividad. La misma llamada debe puntuar igual dos veces.</td></tr>
+            <tr><td><strong>El modelo no conoce <code>converted</code></strong></td><td>Si supiera que la llamada convirtió, puntuaría al alza (razonamiento post-hoc) y contaminaría el cruce fidelidad × conversión, que es justo lo que hay que medir de forma independiente.</td></tr>
+            <tr><td><strong>Razonamiento antes de la puntuación</strong></td><td>El schema obliga a justificar antes de puntuar. Sin ello el modelo asignaba la misma nota a las 7 dimensiones.</td></tr>
+            <tr><td><strong><code>fidelity_total</code> se calcula en Python</strong></td><td>Media ponderada con pesos explícitos. Determinista y auditable: mismas puntuaciones, mismo total, siempre. No es criterio del modelo.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Los pesos por dimensión son configurables y suman 1: escucha y manejo de objeciones pesan más (0,20) que la apertura o los próximos pasos (0,10). Ese reparto es una hipótesis inicial —el propio sistema dirá si es correcto al medir qué dimensiones correlacionan con cerrar.</p>
+
+      <h3>Elección de modelo</h3>
+      <p>Puntuar una transcripción contra un guion es <strong>extracción y clasificación sobre texto dado</strong>, no razonamiento abierto. No necesita un modelo frontera: necesita ser barato, rápido y consistente. De ahí <code>gpt-4o-mini</code> con temperatura 0.</p>
+      <p>Queda margen de optimización: el playbook viaja idéntico en cada petición y ocupa la mayor parte de la entrada, así que es candidato a <em>prompt caching</em>; y como el análisis es asíncrono, puede procesarse en <em>batch</em>.</p>
+      <p>El criterio para escalar a un modelo mayor no es la intuición: es que la validación del scorer muestre que hace falta.</p>
+
+      <h3>Validación del scorer</h3>
+      <p>Un scorer sin validar es una opinión con formato JSON. Tres controles:</p>
+      <ol class="li">
+        <li><strong>Golden set</strong> — llamadas puntuadas a mano. Se mide el acuerdo con el criterio humano: error medio por dimensión y % dentro de tolerancia.</li>
+        <li><strong>Correlación de rangos</strong> — que ordene las llamadas igual que una persona importa más que el valor absoluto: el diagnóstico depende del orden relativo.</li>
+        <li><strong>Evidencia literal</strong> — verificación determinista, sin LLM, de que cada cita existe realmente en la transcripción. Es el control anti-alucinación.</li>
+      </ol>
+      <p>Al cambiar prompt o modelo se vuelve a pasar. <strong>Si empeora, no se despliega.</strong></p>
+      <p>Cada ejecución queda registrada con su modelo y versión de prompt, así que cualquier puntuación es reproducible y auditable. En un producto sanitario eso no es refinamiento: es el mínimo para que una salida de IA sostenga una decisión.</p>
+
+      <h3>API</h3>
+<pre>GET    /api/v1/calls/                    llamadas con su scoring vigente
+GET    /api/v1/calls/{id}/               detalle: dimensiones y transcripción
+POST   /api/v1/calls/                    crear y analizar en una operación
+GET    /api/v1/scoring/playbook/         playbook, dimensiones y pesos
+GET    /api/v1/scoring/method/           prompt, schema y decisiones de diseño
+GET    /api/v1/scoring/eval-report/      informe de validación del scorer</pre>
+      <p>Los tres últimos existen por transparencia: el criterio con el que se puntúa y la prueba de que funciona son parte del producto, no documentación aparte.</p>
+
+      <h3>Operación</h3>
+      <p>Dos comandos de gestión: <code>score_calls</code>, que analiza en lote las llamadas pendientes y admite re-scoring para comparar versiones de prompt; y <code>run_eval</code>, que pasa el golden set y genera el informe de validación.</p>
+      <p>En producción, <code>score_calls</code> sería una tarea programada nocturna sobre las transcripciones del día.</p>
+
+      <h3>Lo que falta para producción</h3>
+      <p>Autenticación y roles reales (el MVP entra sin credenciales), ingesta automática desde el CRM en vez de carga manual, seudonimización de datos personales antes de enviar el texto al modelo, residencia de datos en la UE, y los evals en CI bloqueando despliegues que empeoren la validación.</p>
+    </section>
+
+    <!-- ════════ ANEXO B ════════ -->
+    <section class="doc" id="sb">
+      <div class="kicker"><span class="n">Anexo B</span><span class="rule"></span><span>Material</span></div>
+      <h2>Playbook y transcripciones</h2>
+      <p class="lead">Material sintético creado para el MVP. El playbook es una versión breve del guion de captación; las 5 llamadas cubren los cuatro cuadrantes de la matriz fidelidad × conversión.</p>
+
+      <h3>Playbook de captación (v2.1)</h3>
+      <p><strong>Contexto:</strong> el paciente ha sido derivado por su aseguradora tras una lesión. No es una llamada fría: ya existe relación previa con el partner. La llamada es para que inicie tratamiento con TRAK.</p>
+
+      <h4>Apertura</h4>
+      <ol class="li">
+        <li>Identificarse con nombre y <strong>decir explícitamente que llamas de parte de su aseguradora</strong>, que le ha derivado. Es lo que da legitimidad a la llamada.</li>
+        <li>Confirmar que es buen momento para hablar. Si no, proponer hora concreta (nunca "ya llamaré").</li>
+      </ol>
+
+      <h4>Diagnóstico de la situación</h4>
+      <ol class="li" start="3">
+        <li>Preguntar por la <strong>lesión</strong>: qué le pasó, cuándo, cómo está ahora.</li>
+        <li>Preguntar por el <strong>impacto en su día a día</strong> (trabajo, deporte, dormir). Es lo que conecta emocionalmente.</li>
+        <li>Escuchar sin interrumpir. Recoger sus palabras antes de proponer.</li>
+      </ol>
+
+      <h4>Propuesta de valor</h4>
+      <ol class="li" start="6">
+        <li>Explicar TRAK en concreto: rehabilitación <strong>desde casa</strong>, guiada por su móvil, con <strong>fisioterapeuta asignado</strong> que le supervisa.</li>
+        <li>Traducir a su caso concreto, no soltar la explicación genérica.</li>
+        <li>Mencionar que <strong>está cubierto por su seguro</strong>, sin coste adicional.</li>
+      </ol>
+
+      <h4>Objeciones</h4>
+      <ol class="li" start="9">
+        <li><em>"Prefiero ir presencial"</em> → no confrontar; explicar el seguimiento del fisio y la flexibilidad de horario. Ofrecer probar la primera sesión.</li>
+        <li><em>"No se me da bien la tecnología"</em> → normalizar; solo necesita el móvil y la primera videollamada es acompañada.</li>
+        <li><em>"Me lo tengo que pensar"</em> → identificar la duda real con una pregunta abierta antes de aceptar el aplazamiento.</li>
+      </ol>
+
+      <h4>Cierre</h4>
+      <ol class="li" start="12">
+        <li>Dejar claros los <strong>próximos pasos</strong>: primera videollamada con médico, luego con fisio, y ya empieza.</li>
+        <li>Pedir <strong>compromiso verbal explícito</strong> y agendar día y hora en la misma llamada. Sin fecha cerrada, no hay captación.</li>
+      </ol>
+
+      <h3>Cobertura diagnóstica de los casos</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>#</th><th>Captador</th><th>Aseguradora</th><th>Fidelidad</th><th>Resultado</th></tr></thead>
+          <tbody>
+            <tr><td>001</td><td>Ana (veterana)</td><td>Sanitas</td><td>Alta</td><td><span class="tag ok">Captado</span></td></tr>
+            <tr><td>002</td><td>Ana (veterana)</td><td>Mapfre</td><td>Alta</td><td><span class="tag h3">No captado</span></td></tr>
+            <tr><td>003</td><td>Carlos (nuevo)</td><td>Sanitas</td><td>Baja</td><td><span class="tag h3">No captado</span></td></tr>
+            <tr><td>004</td><td>Lucía (nueva)</td><td>Allianz</td><td>Media-baja</td><td><span class="tag ok">Captado</span></td></tr>
+            <tr><td>005</td><td>Carlos (nuevo)</td><td>Mapfre</td><td>Baja</td><td><span class="tag h3">No captado</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Las llamadas 001 y 003 aíslan la variable captador (mismo partner). Las 002 y 005 exploran si Mapfre convierte peor. La 004 es el caso interesante: baja fidelidad que sí convierte.</p>
+
+      <h3>Qué debería detectar el scorer</h3>
+      <ul class="li">
+        <li><strong>001</strong> — fidelidad alta en todas las dimensiones. Caso de referencia: sigue el guion y cierra con fecha.</li>
+        <li><strong>002</strong> — <strong>fidelidad alta y aun así no convierte.</strong> Señal de H3: el playbook no está adaptado a un perfil mayor con expectativa de terapia manual.</li>
+        <li><strong>003</strong> — fidelidad baja evidente: no diagnostica, monólogo genérico, no trabaja objeción, cierra con "le mando info" en vez de fecha. H1 puro.</li>
+        <li><strong>004</strong> — <strong>fidelidad media-baja pero convierte.</strong> Se salta la estructura formal pero clava lo esencial. Obliga a preguntarse qué partes del playbook son imprescindibles y cuáles ceremonia.</li>
+        <li><strong>005</strong> — fidelidad baja más objeción mal trabajada, con inseguridad sobre el propio producto ("semanalmente, creo").</li>
+      </ul>
+      <div class="note warn"><p>Con solo 5 llamadas esto es ilustrativo, no concluyente. Sirve para validar que el instrumento detecta lo que debe detectar; las conclusiones reales requieren volumen y el experimento de la sección 3.</p></div>
+
+      <h3>Transcripciones</h3>
+
+      <details>
+        <summary>Llamada 001 · Ana Ruiz · Sanitas · Captado</summary>
+        <div class="body">
+          <div class="turn"><span class="who">Ana</span> <span class="mood">(cálido, pausado)</span>: Buenos días, ¿hablo con Miguel Ángel Serrano? Soy Ana, del equipo de TRAK. Le llamo porque Sanitas nos ha derivado su caso tras la lesión de rodilla. ¿Le pillo en buen momento o prefiere que le llame más tarde?</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(neutro, desconfiado)</span>: No, ahora bien. Aunque no sé muy bien qué es esto de TRAK, la verdad.</div>
+          <div class="turn"><span class="who">Ana</span>: Es normal, se lo explico en un minuto. Pero antes, si le parece, cuénteme usted: ¿qué pasó exactamente con la rodilla?</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(se abre)</span>: Jugando al pádel, hace tres semanas. Menisco. El traumatólogo dice que no hace falta operar pero que necesito rehabilitación sí o sí.</div>
+          <div class="turn"><span class="who">Ana</span>: Entiendo. ¿Y cómo le está afectando en el día a día? ¿Trabaja de pie, conduce…?</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(frustrado)</span>: Trabajo sentado, eso bien. Lo que me fastidia es que no puedo jugar, y bajar escaleras me cuesta. Y tengo dos críos pequeños.</div>
+          <div class="turn"><span class="who">Ana</span> <span class="mood">(empático)</span>: Claro, con dos niños tampoco tiene mucho tiempo libre para ir y venir a un centro. Justo por eso Sanitas nos deriva casos como el suyo: con TRAK hace la rehabilitación desde casa, con el móvil. La app le guía en los ejercicios y le corrige, y tiene un fisioterapeuta asignado que le hace seguimiento por videollamada. Para lo suyo de menisco es un protocolo muy trabajado, y podría hacerlo cuando los niños estén dormidos.</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(interesado pero dudoso)</span>: Ya, pero… ¿esto no es peor que ir al fisio de verdad? Digo, si no te toca nadie.</div>
+          <div class="turn"><span class="who">Ana</span> <span class="mood">(firme, sin confrontar)</span>: Es la duda más habitual, y es razonable. La diferencia es que el fisio sigue estando: le ve por videollamada, revisa cómo hace los ejercicios y le ajusta el plan. Lo que cambia es que usted no pierde dos horas en desplazarse tres veces por semana. Y si tras la primera sesión ve que no le encaja, lo hablamos sin problema.</div>
+          <div class="turn"><span class="who">Paciente</span>: ¿Y esto qué me cuesta?</div>
+          <div class="turn"><span class="who">Ana</span>: Nada, está cubierto por su póliza de Sanitas. Sin coste adicional.</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(convencido)</span>: Ah, pues entonces sí. ¿Y cómo empiezo?</div>
+          <div class="turn"><span class="who">Ana</span>: Son dos pasos: primero una videollamada con nuestro médico para validar el caso, y luego otra con el fisioterapeuta que le asignen, que ya le monta el plan. ¿Le va bien el jueves por la tarde, sobre las 18:00?</div>
+          <div class="turn"><span class="who">Paciente</span>: El jueves a las seis me va bien, sí.</div>
+          <div class="turn"><span class="who">Ana</span>: Perfecto, se lo agendo. Le llegará un correo con el enlace. ¿Confirmamos entonces que empieza el jueves?</div>
+          <div class="turn"><span class="who">Paciente</span>: Sí, sí, confirmado.</div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Llamada 002 · Ana Ruiz · Mapfre · No captado</summary>
+        <div class="body">
+          <div class="turn"><span class="who">Ana</span> <span class="mood">(cálido)</span>: Buenas tardes, ¿Carmen Delgado? Soy Ana, de TRAK. Le llamo porque Mapfre nos ha pasado su caso por la lesión de hombro. ¿Tiene un momento?</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(confuso)</span>: ¿Mapfre? A ver, yo lo que pedí fue un fisio. No sé quiénes son ustedes.</div>
+          <div class="turn"><span class="who">Ana</span> <span class="mood">(paciente)</span>: Sí, se lo aclaro. Mapfre trabaja con nosotros para la parte de rehabilitación. Pero cuénteme primero usted, ¿qué pasó con el hombro?</div>
+          <div class="turn"><span class="who">Paciente</span>: Una caída en casa, hace un mes. Tendinitis, dicen. Tengo 68 años.</div>
+          <div class="turn"><span class="who">Ana</span>: ¿Y cómo le limita? ¿Le cuesta dormir, levantar peso…?</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(cansado)</span>: Dormir fatal. Y no puedo ni colgar la ropa. Llevo un mes esperando a que me den las sesiones.</div>
+          <div class="turn"><span class="who">Ana</span> <span class="mood">(empático)</span>: Entiendo que ha esperado mucho, y lo bueno es que con nosotros puede empezar esta misma semana. TRAK es rehabilitación desde casa: le guiamos los ejercicios con el móvil y tiene un fisioterapeuta que le supervisa por videollamada. Para tendinitis de hombro tenemos un protocolo específico, y evitaría los desplazamientos.</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(reticente)</span>: Ya, pero es que yo con el móvil me manejo regular. Mi hija me lo configura todo.</div>
+          <div class="turn"><span class="who">Ana</span> <span class="mood">(normalizando)</span>: Eso lo escuchamos mucho y no es problema. Solo necesita el móvil apoyado y la cámara. La primera videollamada es acompañada, se lo configuramos entre todos, y su hija puede estar delante si quiere.</div>
+          <div class="turn"><span class="who">Paciente</span>: Ya… pero yo lo que quiero es que alguien me toque el hombro, oiga. Mi vecina fue al fisio y le hacían masajes. Esto de la pantalla no lo veo.</div>
+          <div class="turn"><span class="who">Ana</span> <span class="mood">(firme, sin confrontar)</span>: Le entiendo perfectamente. Lo que hacemos es distinto pero está igual de supervisado: el fisioterapeuta le ve, le corrige y le ajusta el plan cada semana. En tendinitis, la parte que más pesa es el ejercicio pautado y la constancia, más que la terapia manual. ¿Le parece si prueba la primera sesión y luego decide?</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(cerrado, cortés)</span>: Mire, se lo agradezco, pero yo prefiero ir presencial. Voy a llamar a Mapfre a ver si me dan un centro.</div>
+          <div class="turn"><span class="who">Ana</span>: Claro, está en su derecho. ¿Puedo preguntarle qué es lo que más le echa para atrás? ¿La tecnología o el no tener contacto físico?</div>
+          <div class="turn"><span class="who">Paciente</span>: El no tener a alguien delante. Yo soy de la vieja escuela.</div>
+          <div class="turn"><span class="who">Ana</span> <span class="mood">(cordial)</span>: Lo entiendo. Le dejo mi contacto por si cambia de opinión, y sepa que la opción sigue cubierta por su póliza sin coste. Que se mejore, Carmen.</div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Llamada 003 · Carlos Núñez · Sanitas · No captado</summary>
+        <div class="body">
+          <div class="turn"><span class="who">Carlos</span> <span class="mood">(rápido, mecánico)</span>: Hola, buenos días, ¿Javier? Le llamo de TRAK, somos una plataforma de rehabilitación digital. ¿Tiene un minuto?</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(distraído)</span>: Eh… sí, dígame.</div>
+          <div class="turn"><span class="who">Carlos</span> <span class="mood">(acelerado, sin pausas)</span>: Verá, TRAK es un servicio de fisioterapia online, hacemos rehabilitación a través de una app con inteligencia artificial que detecta los movimientos, tenemos más de 40 movimientos articulares reconocidos, trabajamos con las principales aseguradoras y tenemos una tasa de recuperación muy alta. Es todo desde casa, muy cómodo. ¿Le interesaría empezar?</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(desconcertado)</span>: Pero… ¿esto por qué me llama? ¿Quién le ha dado mi número?</div>
+          <div class="turn"><span class="who">Carlos</span>: Sí, nos llega su caso a través del seguro. ¿Usted tenía una lesión de espalda, verdad?</div>
+          <div class="turn"><span class="who">Paciente</span>: De cervicales. Bueno, sí, algo así.</div>
+          <div class="turn"><span class="who">Carlos</span>: Perfecto, pues para cervicales va muy bien. El programa dura unas ocho semanas y los resultados son muy buenos. ¿Quiere que le mandemos la información por correo?</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(evasivo)</span>: Pues mire, mándemelo y ya lo miro con calma.</div>
+          <div class="turn"><span class="who">Carlos</span>: Vale, se lo envío. Ah, y no tiene coste, va con el seguro.</div>
+          <div class="turn"><span class="who">Paciente</span>: Vale, vale. Ya le digo algo.</div>
+          <div class="turn"><span class="who">Carlos</span>: Genial, pues que vaya bien. ¡Hasta luego!</div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Llamada 004 · Lucía Pardo · Allianz · Captado</summary>
+        <div class="body">
+          <div class="turn"><span class="who">Lucía</span> <span class="mood">(informal, natural)</span>: ¡Hola! ¿Sara? Soy Lucía, te llamo de TRAK. Me han pasado tu caso por lo del tobillo. ¿Puedes hablar ahora o te pillo liada?</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(relajado)</span>: No, puedo. Aunque no sé de qué va esto, eh.</div>
+          <div class="turn"><span class="who">Lucía</span> <span class="mood">(cercano)</span>: Nada, te lo cuento rápido. Pero oye, primero: ¿cómo llevas el tobillo? Porque un esguince de grado 2 es un rollo.</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(se anima)</span>: ¡Buf, fatal! Llevo tres semanas cojeando. Soy monitora de spinning, imagínate, no puedo trabajar.</div>
+          <div class="turn"><span class="who">Lucía</span> <span class="mood">(empático, espontáneo)</span>: Ostras, claro, si tu trabajo son las piernas… Eso es lo peor, la incertidumbre de cuándo vuelves. ¿Y te han dicho ya plazos?</div>
+          <div class="turn"><span class="who">Paciente</span>: Que seis semanas más o menos, pero con rehabilitación.</div>
+          <div class="turn"><span class="who">Lucía</span>: Vale. Pues justo eso es lo que hacemos. Mira, te lo digo en plata: es rehabilitación que haces en casa con el móvil, la app te va guiando y te corrige, y tienes un fisio asignado que te ve por videollamada. Para alguien como tú, que además sabe de ejercicio, suele ir muy bien porque puedes hacerlo a tu ritmo.</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(interesado)</span>: Ah, pues eso me cuadra más que ir a un centro, la verdad. ¿Y funciona bien la app?</div>
+          <div class="turn"><span class="who">Lucía</span> <span class="mood">(honesto)</span>: A ver, te va a pedir que te coloques bien delante de la cámara y al principio es un poco raro. Pero en dos sesiones le coges el truco.</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(dudando)</span>: Vale… déjame que lo piense un par de días y te digo.</div>
+          <div class="turn"><span class="who">Lucía</span> <span class="mood">(curioso, no presiona)</span>: Claro. Pero por curiosidad, ¿qué es lo que te frena? ¿El formato o es más tema de tiempo?</div>
+          <div class="turn"><span class="who">Paciente</span>: Es que estoy con el papeleo de la baja y voy agobiada. Me da pereza empezar otra cosa.</div>
+          <div class="turn"><span class="who">Lucía</span> <span class="mood">(resolutivo)</span>: Te entiendo. Pero mira, cuanto antes empieces, antes vuelves a las clases. Y de papeleo esto no tiene nada, es solo una videollamada. Si quieres te la dejo apuntada para la semana que viene y si ese día no puedes, la movemos.</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(convencido)</span>: Va, vale. ¿El martes?</div>
+          <div class="turn"><span class="who">Lucía</span>: Martes perfecto. Te mando el enlace por correo. ¡Y ánimo con el tobillo!</div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Llamada 005 · Carlos Núñez · Mapfre · No captado</summary>
+        <div class="body">
+          <div class="turn"><span class="who">Carlos</span> <span class="mood">(neutro, guion memorizado)</span>: Buenas tardes, ¿Antonio Ferrer? Le llamo de TRAK, por el tema de su rehabilitación de espalda. Nos ha llegado su caso.</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(seco)</span>: ¿De dónde dice que llama?</div>
+          <div class="turn"><span class="who">Carlos</span>: De TRAK, somos el servicio de rehabilitación digital que trabaja con su aseguradora.</div>
+          <div class="turn"><span class="who">Paciente</span>: Ya. ¿Y esto qué es, una app?</div>
+          <div class="turn"><span class="who">Carlos</span>: Sí, es una plataforma donde hace los ejercicios de rehabilitación guiados desde casa, con seguimiento de un fisioterapeuta. Es muy cómodo porque no tiene que desplazarse.</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(escéptico)</span>: A ver, yo he pagado un seguro para que me den un fisio, no una app. Esto me suena a que se quieren ahorrar las sesiones.</div>
+          <div class="turn"><span class="who">Carlos</span> <span class="mood">(titubeante)</span>: No, no, a ver… es un servicio igual de válido, está cubierto por su póliza y no le cuesta nada.</div>
+          <div class="turn"><span class="who">Paciente</span>: Ya, si el coste no es el problema. El problema es que me manden a hacer ejercicios solo delante de un móvil.</div>
+          <div class="turn"><span class="who">Carlos</span>: Bueno, tiene el fisio también, eh. Le hace seguimiento.</div>
+          <div class="turn"><span class="who">Paciente</span> <span class="mood">(irritado)</span>: ¿Cada cuánto?</div>
+          <div class="turn"><span class="who">Carlos</span> <span class="mood">(dudando)</span>: Pues… semanalmente, creo. Depende del plan que le asignen.</div>
+          <div class="turn"><span class="who">Paciente</span>: Mire, no me convence. Prefiero que me den sesiones normales.</div>
+          <div class="turn"><span class="who">Carlos</span>: Vale. ¿Quiere que le mande la info por si acaso?</div>
+          <div class="turn"><span class="who">Paciente</span>: No hace falta. Gracias.</div>
+        </div>
+      </details>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Prueba técnica · <b>Product AI Engineer</b> · TRAK</span>
+    <span><b>Jose Vicente Carcel</b> · Julio 2026</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var nav=document.getElementById('nav'),
+      scrim=document.getElementById('scrim'),
+      btn=document.getElementById('menu'),
+      bar=document.querySelector('.bar .bt'),
+      prog=document.getElementById('progress');
+
+  function close(){nav.classList.remove('open');scrim.classList.remove('on');}
+  btn.addEventListener('click',function(){
+    nav.classList.toggle('open');scrim.classList.toggle('on');
+  });
+  scrim.addEventListener('click',close);
+  nav.addEventListener('click',function(e){ if(e.target.closest('a')) close(); });
+
+  // progress bar
+  function onScroll(){
+    var h=document.documentElement,
+        max=h.scrollHeight-h.clientHeight,
+        pct=max>0?(h.scrollTop/max)*100:0;
+    prog.style.width=pct+'%';
+  }
+  document.addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+
+  // scroll spy
+  var items=[].slice.call(document.querySelectorAll('.nav a.item')),
+      map={};
+  items.forEach(function(a){ map[a.getAttribute('href').slice(1)]=a; });
+  var secs=[].slice.call(document.querySelectorAll('section.doc'));
+  if('IntersectionObserver' in window){
+    var cur=null;
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){
+          var id=en.target.id;
+          if(cur&&map[cur]) map[cur].classList.remove('on');
+          if(map[id]){
+            map[id].classList.add('on'); cur=id;
+            var t=map[id].textContent.trim().replace(/^\S+\s/,'');
+            if(bar) bar.textContent=t;
+          }
+        }
+      });
+    },{rootMargin:'-12% 0px -72% 0px',threshold:0});
+    secs.forEach(function(s){io.observe(s);});
+  }
+})();
+</script>
+
+</body>
+</html>
